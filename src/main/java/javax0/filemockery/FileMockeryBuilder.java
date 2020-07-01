@@ -13,7 +13,6 @@ class FileMockeryBuilder implements
 
     private final Map<String, FileMockery> symbolics = new HashMap<>();
     private FileMockery lastParent = null;
-    private FileMockery lastFile = null;
     private boolean buildPhase = true;
 
     public FileMockeryBuilder cwd(String setCwd) {
@@ -22,7 +21,7 @@ class FileMockeryBuilder implements
                 "It is already '" + cwd + "'\n" +
                 "Second value is '" + setCwd + "'");
         }
-        while( setCwd.endsWith("/")){
+        while(setCwd.endsWith("/")){
             setCwd = setCwd.substring(0,setCwd.length()-1);
         }
         cwd = setCwd;
@@ -56,7 +55,6 @@ class FileMockeryBuilder implements
 
     public FileMockeryBuilder directories(String... pathNames) {
         lastParent = register(lastParent, true, pathNames);
-        lastFile = null;
         return this;
     }
 
@@ -65,63 +63,73 @@ class FileMockeryBuilder implements
     }
 
     public FileMockeryBuilder files(String... pathNames) {
-        lastFile = register(lastParent, false, pathNames);
+        register(lastParent, false, pathNames);
         return this;
     }
 
     private FileMockery register(FileMockery parentFile, boolean directory, String... pathNames) {
         FileMockery it = null;
         for (final var pathName : pathNames) {
-            it = registerOne(parentFile, directory, pathName);
+            it = register(parentFile, directory, pathName);
         }
         return it;
     }
 
-    private FileMockery registerOne(FileMockery parentFile, boolean directory, String pathName) {
-        return registerIsAbsolute(parentFile, directory, pathName, false);
-    }
+    private FileMockery register(FileMockery parentFile, boolean directory, String pathName) {
+        final FileMockery parent;
 
-    private FileMockery registerIsAbsolute(FileMockery parentFile, boolean directory, String pathName, boolean absolute) {
-        final FileMockery it;
-        FileMockery parent;
-
-        if (pathName.startsWith("/") && !absolute) {
+        if (pathName.startsWith("/")) {
             parent = null;
             pathName = pathName.substring(1);
         } else {
             parent = parentFile;
         }
 
-        if (pathName.contains("/") && !absolute) {
-            if (!directory) {
-                throw new IllegalArgumentException("File name should not contain '/' character as in '" + pathName + "'");
-            }
-            for (final var dir : pathName.split("/")) {
-                parent = registerOne(parent, true, dir);
-            }
-            return parent;
+        if (pathName.contains("/")) {
+            return splitPath(directory, pathName, parent);
         } else {
-            it = new FileMockery(pathName, parent);
-            it.fileIsDirectory = directory;
-            it.fileExists = buildPhase;
-            fileMap.put(pathName, it);
-            if (it.parentFile == null) {
-                it.absoluteFile = it;
-                it.absoluteFileName = "/" + it.pathname;
-            } else {
-                if (absolute) {
-                    it.absoluteFileName = it.pathname;
-                    it.absoluteFile = it;
-                } else {
-                    if (buildPhase) {
-                        it.parentFile.fileList.add(pathName);
-                    }
-                    it.absoluteFileName = (parentFile.getAbsolutePath() + "/" + pathName).replaceAll("//", "/");
-                    it.absoluteFile = registerIsAbsolute(parentFile, directory, it.absoluteFileName, true);
-                }
-            }
-            it.absoluteFile.fileList = it.fileList;
+            return createMockery(parentFile, directory, pathName, parent);
         }
+    }
+
+    private FileMockery createMockery(FileMockery parentFile, boolean directory, String pathName, FileMockery parent) {
+        FileMockery it;
+        it = new FileMockery(pathName, parent);
+        it.fileIsDirectory = directory;
+        it.fileExists = buildPhase;
+        fileMap.put(pathName, it);
+        if (it.parentFile == null) {
+            it.absoluteFile = it;
+            it.absoluteFileName = "/" + it.pathname;
+        } else {
+            if (buildPhase) {
+                it.parentFile.fileList.add(pathName);
+            }
+            it.absoluteFileName = (parentFile.getAbsolutePath() + "/" + pathName).replaceAll("//", "/");
+            it.absoluteFile = registerAbsolute(parentFile, directory, it.absoluteFileName);
+        }
+        it.absoluteFile.fileList = it.fileList;
+        return it;
+    }
+
+    private FileMockery splitPath(boolean directory, String pathName, FileMockery parent) {
+        if (!directory) {
+            throw new IllegalArgumentException("File name should not contain '/' character as in '" + pathName + "'");
+        }
+        for (final var dir : pathName.split("/")) {
+            parent = register(parent, true, dir);
+        }
+        return parent;
+    }
+
+    private FileMockery registerAbsolute(FileMockery parentFile, boolean directory, String pathName) {
+        final FileMockery it = new FileMockery(pathName, parentFile);
+        it.fileIsDirectory = directory;
+        it.fileExists = buildPhase;
+        fileMap.put(pathName, it);
+        it.absoluteFileName = it.parentFile == null ? "/" + it.pathname : it.pathname;
+        it.absoluteFile = it;
+        it.absoluteFile.fileList = it.fileList;
         return it;
     }
 
@@ -139,7 +147,7 @@ class FileMockeryBuilder implements
         throws NoSuchFieldException, IllegalAccessException {
         final var targetField = targetClass.getDeclaredField(fieldName);
         targetField.setAccessible(true);
-        targetField.set(null, build());
+        targetField.set(instance, build());
         return this;
     }
 
@@ -157,7 +165,12 @@ class FileMockeryBuilder implements
         }
         if (!fileMap.containsKey(s)) {
             final var currDir = fileMap.get(cwd);
-            final var it = registerIsAbsolute(currDir, false, s, s.startsWith("/"));
+            final FileMockery it;
+            if (s.startsWith("/")) {
+                it = registerAbsolute(currDir, false, s);
+            } else {
+                it = register(currDir, false, s);
+            }
             it.fileExists = false;
             it.absoluteFile.fileExists = false;
         }

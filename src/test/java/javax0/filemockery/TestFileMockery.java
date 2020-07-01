@@ -1,5 +1,6 @@
 package javax0.filemockery;
 
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import java.io.File;
@@ -8,6 +9,7 @@ import java.util.function.Function;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 public class TestFileMockery {
     private static Function<String, File> fileProvider;
@@ -45,5 +47,19 @@ public class TestFileMockery {
         assertEquals("/Users/localuser/project/target/err.txt",ee.getAbsolutePath());
         assertEquals("/Users/localuser/project/target/err.txt",ee.getAbsoluteFile().getAbsolutePath());
         assertEquals("err.txt",ee.getAbsoluteFile().getName());
+    }
+
+    @Nested
+    class NonPrivateFileProviderTestCase {
+        private Function<String, File> fileProvider;
+
+        @Test
+        void canInjectFileProviderForInstance() {
+            try {
+                Builder.createFS().cwd("test").inject(NonPrivateFileProviderTestCase.class, this, "fileProvider");
+            } catch (NoSuchFieldException | IllegalAccessException e) {
+                fail();
+            }
+        }
     }
 }
