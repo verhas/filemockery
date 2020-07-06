@@ -1,13 +1,19 @@
 package javax0.filemockery;
 
+import javax0.geci.engine.Geci;
+import javax0.geci.fluent.Fluent;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.function.Function;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 public class TestFileMockery {
     private static Function<String, File> fileProvider;
@@ -18,7 +24,7 @@ public class TestFileMockery {
 
     @Test
     void testMockery() throws NoSuchFieldException, IllegalAccessException {
-        Builder.createFS()
+        FileMockeryBuilder.start()
             .directory("/Users/localuser/project").mark("proj")
             .directory("locator/")
             .files("a.txt", "b.txt", "c.txt", "d.txt")
@@ -42,8 +48,33 @@ public class TestFileMockery {
         assertTrue(e.isFile());
         final var ee = newFile("err.txt");
         assertFalse(ee.exists());
-        assertEquals("/Users/localuser/project/target/err.txt",ee.getAbsolutePath());
-        assertEquals("/Users/localuser/project/target/err.txt",ee.getAbsoluteFile().getAbsolutePath());
-        assertEquals("err.txt",ee.getAbsoluteFile().getName());
+        assertEquals("/Users/localuser/project/target/err.txt", ee.getAbsolutePath());
+        assertEquals("/Users/localuser/project/target/err.txt", ee.getAbsoluteFile().getAbsolutePath());
+        assertEquals("err.txt", ee.getAbsoluteFile().getName());
+    }
+
+    @Nested
+    class NonPrivateFileProviderTestCase {
+        private Function<String, File> fileProvider;
+
+        @Test
+        void canInjectFileProviderForInstance() {
+            try {
+                FileMockeryBuilder.start()
+                    .file("")
+                    .cwd("test")
+                    .inject(NonPrivateFileProviderTestCase.class, this, "fileProvider");
+            } catch (NoSuchFieldException | IllegalAccessException e) {
+                fail();
+            }
+        }
+    }
+
+    @Test
+    void generateFluentAPI() throws IOException {
+        final var geci = new Geci();
+        Assertions.assertFalse(
+            geci.register(new Fluent()).generate()
+        );
     }
 }

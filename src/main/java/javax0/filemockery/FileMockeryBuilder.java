@@ -1,40 +1,41 @@
 package javax0.filemockery;
 
+import javax0.geci.annotations.Geci;
+
 import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Function;
 
-class FileMockeryBuilder implements
-    Builder.Start, Builder.Ending, Builder.Markable, Builder.Kramable, Builder.Kramarkable {
+@Geci("fluent syntax='((file|files kram?)|(directory|directories mark? kram?))* cwd inject? build'")
+class FileMockeryBuilder {
 
     private String cwd = null;
     private final Map<String, FileMockery> fileMap = new HashMap<>();
 
     private final Map<String, FileMockery> symbolics = new HashMap<>();
     private FileMockery lastParent = null;
-    private FileMockery lastFile = null;
     private boolean buildPhase = true;
 
-    public FileMockeryBuilder cwd(String setCwd) {
+    private FileMockeryBuilder cwd(String setCwd) {
         if (cwd != null) {
             throw new IllegalArgumentException("You cannot set more than one CWD.\n" +
                 "It is already '" + cwd + "'\n" +
                 "Second value is '" + setCwd + "'");
         }
-        while( setCwd.endsWith("/")){
-            setCwd = setCwd.substring(0,setCwd.length()-1);
+        while (setCwd.endsWith("/")) {
+            setCwd = setCwd.substring(0, setCwd.length() - 1);
         }
         cwd = setCwd;
         return this;
     }
 
-    public FileMockeryBuilder mark(String name) {
+    private FileMockeryBuilder mark(String name) {
         symbolics.put(name, lastParent);
         return this;
     }
 
-    public FileMockeryBuilder kram(String name) {
+    private FileMockeryBuilder kram(String name) {
         if (!symbolics.containsKey(name)) {
             throw new IllegalArgumentException("as(\"" + name + "\" was not used cannot cd(\"" + name + "\") to it");
         }
@@ -42,7 +43,7 @@ class FileMockeryBuilder implements
         return this;
     }
 
-    public FileMockeryBuilder up() {
+    private FileMockeryBuilder up() {
         if (lastParent == null) {
             throw new IllegalArgumentException("Cannot go up from the root directory");
         }
@@ -50,22 +51,21 @@ class FileMockeryBuilder implements
         return this;
     }
 
-    public FileMockeryBuilder directory(String pathName) {
+    private FileMockeryBuilder directory(String pathName) {
         return directories(pathName);
     }
 
-    public FileMockeryBuilder directories(String... pathNames) {
+    private FileMockeryBuilder directories(String... pathNames) {
         lastParent = register(lastParent, true, pathNames);
-        lastFile = null;
         return this;
     }
 
-    public FileMockeryBuilder file(String pathName) {
+    private FileMockeryBuilder file(String pathName) {
         return files(pathName);
     }
 
-    public FileMockeryBuilder files(String... pathNames) {
-        lastFile = register(lastParent, false, pathNames);
+    private FileMockeryBuilder files(String... pathNames) {
+        register(lastParent, false, pathNames);
         return this;
     }
 
@@ -101,45 +101,52 @@ class FileMockeryBuilder implements
             }
             return parent;
         } else {
-            it = new FileMockery(pathName, parent);
-            it.fileIsDirectory = directory;
-            it.fileExists = buildPhase;
-            fileMap.put(pathName, it);
-            if (it.parentFile == null) {
-                it.absoluteFile = it;
-                it.absoluteFileName = "/" + it.pathname;
-            } else {
-                if (absolute) {
-                    it.absoluteFileName = it.pathname;
-                    it.absoluteFile = it;
-                } else {
-                    if (buildPhase) {
-                        it.parentFile.fileList.add(pathName);
-                    }
-                    it.absoluteFileName = (parentFile.getAbsolutePath() + "/" + pathName).replaceAll("//", "/");
-                    it.absoluteFile = registerIsAbsolute(parentFile, directory, it.absoluteFileName, true);
-                }
-            }
-            it.absoluteFile.fileList = it.fileList;
+            it = createMockery(parentFile, directory, pathName, parent);
         }
         return it;
     }
 
-    public FileMockeryBuilder inject(Class<?> targetClass)
-        throws NoSuchFieldException, IllegalAccessException {
-        return inject(targetClass, "fileProvider");
+    private FileMockery createMockery(FileMockery parentFile, boolean directory, String pathName, FileMockery parent) {
+        FileMockery it;
+        it = new FileMockery(pathName, parent);
+        it.fileIsDirectory = directory;
+        it.fileExists = buildPhase;
+        fileMap.put(pathName, it);
+        if (it.parentFile == null) {
+            it.absoluteFile = it;
+            it.absoluteFileName = "/" + it.pathname;
+        } else {
+            if (buildPhase) {
+                it.parentFile.fileList.add(pathName);
+            }
+            it.absoluteFileName = (parentFile.getAbsolutePath() + "/" + pathName).replaceAll("//", "/");
+            it.absoluteFile = registerIsAbsolute(parentFile, directory, it.absoluteFileName, true);
+        }
+        it.absoluteFile.fileList = it.fileList;
+        return it;
     }
 
-    public FileMockeryBuilder inject(Class<?> targetClass, String fieldName)
+    private FileMockeryBuilder inject(Class<?> targetClass, Object... params)
         throws NoSuchFieldException, IllegalAccessException {
-        return inject(targetClass, null, fieldName);
+        if (params.length == 1) {
+            return inject2(targetClass, (String) params[0]);
+        }
+        if (params.length > 1) {
+            return inject3(targetClass, params[0], (String) params[1]);
+        }
+        return inject2(targetClass, "fileProvider");
     }
 
-    public FileMockeryBuilder inject(Class<?> targetClass, Object instance, String fieldName)
+    private FileMockeryBuilder inject2(Class<?> targetClass, String fieldName)
+        throws NoSuchFieldException, IllegalAccessException {
+        return inject3(targetClass, null, fieldName);
+    }
+
+    private FileMockeryBuilder inject3(Class<?> targetClass, Object instance, String fieldName)
         throws NoSuchFieldException, IllegalAccessException {
         final var targetField = targetClass.getDeclaredField(fieldName);
         targetField.setAccessible(true);
-        targetField.set(null, build());
+        targetField.set(instance, build());
         return this;
     }
 
@@ -163,4 +170,81 @@ class FileMockeryBuilder implements
         }
         return fileMap.get(s);
     }
+
+    //<editor-fold id="fluent" desc="fluent API interfaces and classes">
+    public static Uhab start(){
+        return new Wrapper();
+    }
+    public static class Wrapper implements Ukeg,Abok,Efeh,Ujaj,Ogoj,Edak,Acuh,Aduf,Uhab,Ohug{
+        private final javax0.filemockery.FileMockeryBuilder that;
+        public Wrapper(){
+            this.that = new javax0.filemockery.FileMockeryBuilder();
+        }
+        public Wrapper file(String arg1){
+            that.file(arg1);
+            return this;
+        }
+        public Wrapper files(String...  arg1){
+            that.files(arg1);
+            return this;
+        }
+        public Wrapper mark(String arg1){
+            that.mark(arg1);
+            return this;
+        }
+        public Wrapper directories(String...  arg1){
+            that.directories(arg1);
+            return this;
+        }
+        public java.util.function.Function<String,java.io.File> build(){
+            return that.build();
+        }
+        public Wrapper cwd(String arg1){
+            that.cwd(arg1);
+            return this;
+        }
+        public Wrapper kram(String arg1){
+            that.kram(arg1);
+            return this;
+        }
+        public Wrapper inject(Class<?> arg1, Object...  arg2) throws NoSuchFieldException,IllegalAccessException{
+            that.inject(arg1,arg2);
+            return this;
+        }
+        public Wrapper directory(String arg1){
+            that.directory(arg1);
+            return this;
+        }
+    }
+    public interface Aduf {
+        java.util.function.Function<String,java.io.File> build();
+    }
+    public interface Ukeg extends Aduf {
+        Aduf inject(Class<?> arg1, Object...  arg2) throws NoSuchFieldException,IllegalAccessException;
+    }
+    public interface Ohug {
+        Ukeg cwd(String arg1);
+    }
+    public interface Acuh extends Efeh {
+        Efeh kram(String arg1);
+    }
+    public interface Ujaj extends Acuh {
+        Acuh mark(String arg1);
+    }
+    public interface Ogoj{
+        Ujaj directories(String...  arg1);
+        Ujaj directory(String arg1);
+    }
+    public interface Edak extends Efeh {
+        Efeh kram(String arg1);
+    }
+    public interface Abok{
+        Edak file(String arg1);
+        Edak files(String...  arg1);
+    }
+    public interface Uhab extends Abok,Ogoj{
+    }
+    public interface Efeh extends Uhab,Ohug {}
+
+    //</editor-fold>
 }
