@@ -7,7 +7,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Function;
 
-@Geci("fluent syntax='((file|files kram?)|(directory|directories mark? kram?))* cwd inject? build'")
+@Geci("fluent definedBy='javax0.filemockery.TestFileMockery::FileMockeryBuilderGrammar'")
 class FileMockeryBuilder {
 
     private String cwd = null;
@@ -172,10 +172,11 @@ class FileMockeryBuilder {
     }
 
     //<editor-fold id="fluent" desc="fluent API interfaces and classes">
-    public static Uhab start(){
+    public interface MockeryBuilder extends Uhab {}
+    public static MockeryBuilder createFS(){
         return new Wrapper();
     }
-    public static class Wrapper implements Ukeg,Abok,Efeh,Ujaj,Ogoj,Edak,Acuh,Aduf,Uhab,Ohug{
+    public static class Wrapper implements Ukeg,Abok,Efeh,MockeryBuilder,Ujaj,Ogoj,Edak,Acuh,Aduf,Uhab,Ohug{
         private final javax0.filemockery.FileMockeryBuilder that;
         public Wrapper(){
             this.that = new javax0.filemockery.FileMockeryBuilder();

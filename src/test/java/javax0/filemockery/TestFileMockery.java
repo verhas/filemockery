@@ -2,6 +2,7 @@ package javax0.filemockery;
 
 import javax0.geci.engine.Geci;
 import javax0.geci.fluent.Fluent;
+import javax0.geci.fluent.FluentBuilder;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -12,6 +13,7 @@ import java.util.function.Function;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -24,7 +26,7 @@ public class TestFileMockery {
 
     @Test
     void testMockery() throws NoSuchFieldException, IllegalAccessException {
-        FileMockeryBuilder.start()
+        FileMockeryBuilder.createFS()
             .directory("/Users/localuser/project").mark("proj")
             .directory("locator/")
             .files("a.txt", "b.txt", "c.txt", "d.txt")
@@ -38,6 +40,7 @@ public class TestFileMockery {
             .inject(TestFileMockery.class);
         final var z = newFile("/Users/localuser/project/locator");
         final var fileList = z.list();
+        assertNotNull(fileList);
         assertEquals(4, fileList.length);
         assertEquals("a.txt", fileList[0]);
         assertEquals("b.txt", fileList[1]);
@@ -60,7 +63,7 @@ public class TestFileMockery {
         @Test
         void canInjectFileProviderForInstance() {
             try {
-                FileMockeryBuilder.start()
+                FileMockeryBuilder.createFS()
                     .file("")
                     .cwd("test")
                     .inject(NonPrivateFileProviderTestCase.class, this, "fileProvider");
@@ -76,5 +79,12 @@ public class TestFileMockery {
         Assertions.assertFalse(
             geci.register(new Fluent()).generate()
         );
+    }
+
+    public static FluentBuilder FileMockeryBuilderGrammar() {
+        final var grammar = FluentBuilder.from(FileMockeryBuilder.class).start("createFS").fluentType("MockeryBuilder");
+        return grammar.zeroOrMore(grammar.oneOf(grammar.oneOf("file", "files").optional("kram"),
+            grammar.oneOf("directory", "directories").optional("mark").optional("kram")))
+            .one("cwd").optional("inject").one("build");
     }
 }
