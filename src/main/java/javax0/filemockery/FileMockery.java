@@ -8,7 +8,7 @@ class FileMockery extends File {
     final String pathname;
     FileMockery absoluteFile = null;
     String absoluteFileName = null;
-    FileMockery parentFile = null;
+    FileMockery parentFile;
     String name = null;
     List<String> fileList = new ArrayList<>();
     boolean fileIsDirectory;
@@ -20,7 +20,7 @@ class FileMockery extends File {
         super(pathname);
         this.pathname = pathname;
         this.parentFile = parentFile;
-        this.fileIsDirectory = pathname.substring(1).contains(".");
+        this.fileIsDirectory = pathname.length()> 0 && pathname.substring(1).contains(".");
     }
 
     @Override

@@ -17,7 +17,7 @@ class FileMockeryBuilder {
     private FileMockery lastParent = null;
     private boolean buildPhase = true;
 
-    private FileMockeryBuilder cwd(String setCwd) {
+    private void cwd(String setCwd) {
         if (cwd != null) {
             throw new IllegalArgumentException("You cannot set more than one CWD.\n" +
                 "It is already '" + cwd + "'\n" +
@@ -27,46 +27,40 @@ class FileMockeryBuilder {
             setCwd = setCwd.substring(0, setCwd.length() - 1);
         }
         cwd = setCwd;
-        return this;
     }
 
-    private FileMockeryBuilder mark(String name) {
+    private void mark(String name) {
         symbolics.put(name, lastParent);
-        return this;
     }
 
-    private FileMockeryBuilder kram(String name) {
+    private void kram(String name) {
         if (!symbolics.containsKey(name)) {
             throw new IllegalArgumentException("as(\"" + name + "\" was not used cannot cd(\"" + name + "\") to it");
         }
         lastParent = symbolics.get(name);
-        return this;
     }
 
-    private FileMockeryBuilder up() {
+    private void up() {
         if (lastParent == null) {
             throw new IllegalArgumentException("Cannot go up from the root directory");
         }
         lastParent = lastParent.getParentFile();
-        return this;
     }
 
-    private FileMockeryBuilder directory(String pathName) {
-        return directories(pathName);
+    private void directory(String pathName) {
+        directories(pathName);
     }
 
-    private FileMockeryBuilder directories(String... pathNames) {
+    private void directories(String... pathNames) {
         lastParent = register(lastParent, true, pathNames);
-        return this;
     }
 
-    private FileMockeryBuilder file(String pathName) {
-        return files(pathName);
+    private void file(String pathName) {
+        files(pathName);
     }
 
-    private FileMockeryBuilder files(String... pathNames) {
+    private void files(String... pathNames) {
         register(lastParent, false, pathNames);
-        return this;
     }
 
     private FileMockery register(FileMockery parentFile, boolean directory, String... pathNames) {
@@ -78,10 +72,10 @@ class FileMockeryBuilder {
     }
 
     private FileMockery registerOne(FileMockery parentFile, boolean directory, String pathName) {
-        return registerIsAbsolute(parentFile, directory, pathName, false);
+        return registerIsAbsolute(parentFile, directory, pathName, parentFile == null);
     }
 
-    private FileMockery registerIsAbsolute(FileMockery parentFile, boolean directory, String pathName, boolean absolute) {
+    private FileMockery registerIsAbsolute(FileMockery parentFile, boolean directory, String pathName, final boolean absolute) {
         final FileMockery it;
         FileMockery parent;
 
@@ -106,13 +100,16 @@ class FileMockeryBuilder {
         return it;
     }
 
-    private FileMockery createMockery(FileMockery parentFile, boolean directory, String pathName, FileMockery parent) {
+    private FileMockery createMockery(final FileMockery parentFile,
+                                      final boolean directory,
+                                      final String pathName,
+                                      final FileMockery parent) {
         FileMockery it;
         it = new FileMockery(pathName, parent);
         it.fileIsDirectory = directory;
         it.fileExists = buildPhase;
         fileMap.put(pathName, it);
-        if (it.parentFile == null) {
+        if (it.parentFile == null ) {
             it.absoluteFile = it;
             it.absoluteFileName = "/" + it.pathname;
         } else {
@@ -120,7 +117,7 @@ class FileMockeryBuilder {
                 it.parentFile.fileList.add(pathName);
             }
             it.absoluteFileName = (parentFile.getAbsolutePath() + "/" + pathName).replaceAll("//", "/");
-            it.absoluteFile = registerIsAbsolute(parentFile, directory, it.absoluteFileName, true);
+            it.absoluteFile = registerIsAbsolute(null, directory, it.absoluteFileName, true);
         }
         it.absoluteFile.fileList = it.fileList;
         return it;
