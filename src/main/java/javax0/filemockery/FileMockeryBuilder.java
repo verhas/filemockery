@@ -7,6 +7,46 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Function;
 
+/**
+ * Create a file mockery using this builder. The builder has a fluent API that can be used to specify the files
+ * that the file mockery can traverse. For example:
+ *
+ * <pre>{@code
+ *         FileMockeryBuilder.createFS()
+ *             .directory("/Users/localuser/project").mark("proj")
+ *             .directory("locator/")
+ *             .files("a.txt", "b.txt", "c.txt", "d.txt")
+ *             .kram("proj")
+ *             .directory("target/")
+ *             .files("a.txt", "b.txt", "c.txt", "d.txt")
+ *             .file("e.txt")
+ *             .directory("libretto/")
+ *             .files("a.txt", "b.txt", "c.txt", "d.txt")
+ *             .cwd("/Users/localuser/project/target/")
+ *             .inject(TestFileMockery.class);
+ * }</pre>
+ *
+ * <p>Defines a test file system, that has several files in it. The methods {@code directory()} and {@code
+ * directories()} can be used to define new directories and similarly {@code file()} and {@code files()} can be used to
+ * define files. For example the call to {@code directory("/Users/localuser/project")} creates the mocked directory
+ * {@code /Users/localuser/project} (Just to be sure: no real directory is created. These directories and files are only
+ * in the file mockery.) Creating the directory {@code /Users/localuser/project} means that the directories {@code
+ * /Users/localuser} and {@code /Users} are also created automatically in the mockery.The call to {@code
+ * directory("locator/")} creates the directory {@code locator} under the previous directory where the previous call
+ * left off. The files {@code a.txt}, {@code b.txt}, {@code c.txt} and {@code d.txt} are created under this
+ * directory.</p>
+ *
+ * <p>The method {@code mark("proj")} marks the actual location of the fire creation and assigned that to the symbolic
+ * name {@code "proj"}. Later when we do the reverse calling {@code kram("proj")} we get back there and we can create
+ * the directory {@code target} under {@code /Users/localuser/project}.</p>
+ *
+ * <p>The method {@code cwd()} defines the current working directory. When a file is requested using a relative name in
+ * the mockery then this directory is used as the current working directory.</p>
+ *
+ * <p>The method {@link #inject(Class, Object...) inject()} can inject the created and built file mockery factory into a
+ * test object.</p>
+ *
+ */
 @Geci("fluent definedBy='javax0.filemockery.TestFileMockery::FileMockeryBuilderGrammar'")
 class FileMockeryBuilder {
 

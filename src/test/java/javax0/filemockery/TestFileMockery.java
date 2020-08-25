@@ -18,7 +18,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
 public class TestFileMockery {
-    private static Function<String, File> fileProvider;
+    private static Function<String, File> fileProvider = File::new;
 
     private static File newFile(String name) {
         return fileProvider.apply(name);
@@ -27,16 +27,33 @@ public class TestFileMockery {
     @Test
     void testMockery() throws NoSuchFieldException, IllegalAccessException {
         FileMockeryBuilder.createFS()
-            .directory("/Users/localuser/project").mark("proj")
+            // create the directory `/Users/localuser/project`
+            // it automatically also creates the directory `/Users` and `/Users/localuser`
+            .directory("/Users/localuser/project")
+            // mark the current location and assign the symbolic name "proj" to it
+            .mark("proj")
+            // create the directory `locator` under the actual directory, which is `/Users/localuser/project`
+            // after this the actual directory will be `/Users/localuser/project/locator`
             .directory("locator/")
+            // create the files `a.txt`, `b.txt` and so on under the actual directory that is `/Users/localuser/project/locator`
             .files("a.txt", "b.txt", "c.txt", "d.txt")
+            // reverse `mark()` move back. The actual directory will be the one that was marked using
+            // "proj", which is `/Users/localuser/project`
             .kram("proj")
+            // create the directory `/Users/localuser/project/target`
             .directory("target/")
+            // create the files under the directory `/Users/localuser/project/target`
             .files("a.txt", "b.txt", "c.txt", "d.txt")
+            // create another file in this directory
             .file("e.txt")
+            // go one directory deeper and create `/Users/localuser/project/target/libretto`
             .directory("libretto/")
+            // create files here
             .files("a.txt", "b.txt", "c.txt", "d.txt")
+            // the current working directory during the execution of the SUT will be `/Users/localuser/project/target/`
             .cwd("/Users/localuser/project/target/")
+            // inject the `File` factory based on this mockery into the class (in this case this is a self contained
+            // test so into itself
             .inject(TestFileMockery.class);
         final var z = newFile("/Users/localuser/project/locator");
         final var fileList = z.list();

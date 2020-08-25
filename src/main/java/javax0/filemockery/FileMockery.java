@@ -4,6 +4,17 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * <p>FileMockery is a mocking extension of the class {@link File} and can be used to test applications that use the
+ * directory traversing and file listing functionality of the {@link File} class. It cannot be used to open a file and
+ * read data from a file or write into a file.</p>
+ *
+ * To get access to a {@code FileMockery} instead of a file you need to structure your code in a way that it does not
+ * explicitly uses {@code new File(...)} but uses some factory that can be modified in a way that it returns a {@code
+ * FileMockery} instance instead of a genuine {@link File}. To create a {@code FileMockery}. There should be a {@code
+ * private static Function<String, File> fileProvider = File::new;} field in the class and the builder can inject to
+ * this field the file provider that will return the mock instead of a {@code File} when the tests are running.
+ */
 class FileMockery extends File {
     final String pathname;
     FileMockery absoluteFile = null;
